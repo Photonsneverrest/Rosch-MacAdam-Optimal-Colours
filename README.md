@@ -6,8 +6,14 @@ each as ratio of the from the spectrum calculated chroma and lightness divided b
 
 <p align="center">
   <img
-    src="GIF/rosch_macadam_colour_solid_rotation_opacity10.gif"
+    src="GIF/rosch_macadam_colour_solid_rotation_opacity10_inf.gif"
     alt="MacAdam Color Solid Rotation Demo"
+    style="max-width: 100%; height: auto; width: 800px;">
+  
+  <p align="center">
+  <img
+    src="GIF/rosch_macadam_colour_solid_rotation_rgbebu_inf.gif"
+    alt="MacAdam Color Solid and RGB-EBU"
     style="max-width: 100%; height: auto; width: 800px;">
 ---
 
