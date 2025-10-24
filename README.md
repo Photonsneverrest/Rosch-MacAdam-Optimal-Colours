@@ -5,7 +5,10 @@ It is used as reference to quantify the performance of a pigment. Two ratios are
 each as ratio of the from the spectrum calculated chroma and lightness divided by their at the same hue corresponding maximal values.
 
 <p align="center">
-  <img src="GIF/rosch_macadam_colour_solid_rotation_opacity10.gif
+  <img
+    src="GIF/rosch_macadam_colour_solid_rotation_opacity10.gif"
+    alt="MacAdam Color Solid Rotation Demo"
+    style="max-width: 100%; height: auto; width: 800px;">
 ---
 
 ## Features
