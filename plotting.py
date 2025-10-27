@@ -9,7 +9,7 @@ def plot_macadam_plotly(
     chroma=None,
     title="Rösch–MacAdam Colour Solid (CIELAB, D65)",
     max_points=60000,
-    marker_size=5,
+    marker_size=1,
     opacity=1.0
 ):
     L = Lab_ref[:, 0]

@@ -48,10 +48,10 @@ def max_chroma_stats_at_hue(Lab_ref, hue_deg, chroma, target_h, tol_deg=0.75):
     if not np.any(mask):
         return None
     idxs = np.nonzero(mask)[0]
-    chroma_scaled = 10.0 * chroma
+    chroma_scaled = 1.0 * chroma
     local_chroma = chroma_scaled[mask]
     best_local = idxs[np.argmax(local_chroma)]
-    Lab_ref_scaled = 10.0 * Lab_ref
+    Lab_ref_scaled = 1.0 * Lab_ref
     L, a, b = Lab_ref_scaled[best_local]
     C = float(chroma_scaled[best_local])
     h = float(hue_deg[best_local])
@@ -62,7 +62,7 @@ import plotly.graph_objects as go
 import numpy as np
 
 def add_hue_ridge_to_fig(fig, L_centres, a_vals, b_vals,
-                          scale=10.0, name='Max-C* ridge at hue',
+                          scale=1.0, name='Max-C* ridge at hue',
                           color='black'):
     if L_centres.size == 0:
         return fig

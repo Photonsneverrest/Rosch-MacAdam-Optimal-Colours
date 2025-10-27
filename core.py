@@ -64,7 +64,7 @@ def build_rosch_macadam_XYZ(
     a = Lab_ref[:, 1]
     b = Lab_ref[:, 2]
     chroma = np.hypot(a, b)
-    hue_deg = (np.degrees(np.arctan2(b, a)) % 360.0)
+    hue_deg = (np.degrees(np.arctan2(b, a) + 360) % 360.0)
 
     rgb_phys = np.clip(colour.XYZ_to_sRGB(XYZ_rel, illuminant=D65_xy), 0.0, 1.0)
 
