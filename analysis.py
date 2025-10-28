@@ -77,3 +77,107 @@ def add_hue_ridge_to_fig(fig, L_centres, a_vals, b_vals,
         hovertemplate='L*: %{z:.2f}<br>a*: %{x:.2f}<br>b*: %{y:.2f}<extra></extra>'
     ))
     return fig
+
+import pandas as pd
+def max_chroma_per_hue(Rosch_DataFrame, hue_resolution = 1.0):
+    """Compute the maximum chroma per hue from the Rosch-MacAdam DataFrame.
+    Smooth the resulting a*, b*, L* values using Savitzky-Golay filter."""
+    hue_bins = np.arange(0, 360 + hue_resolution, hue_resolution)  # 0 to 360 degrees
+
+    # Prepare a list to store max chroma per hue bin
+    max_chroma_per_hue = []
+
+    # Loop through hue bins
+    for i in range(len(hue_bins) - 1):
+        hue_min = hue_bins[i]
+        hue_max = hue_bins[i + 1]
+
+        # Select points within the current hue bin
+        bin_data = Rosch_DataFrame[(Rosch_DataFrame['hue_deg'] >= hue_min) & (Rosch_DataFrame['hue_deg'] < hue_max)]
+
+        if len(bin_data) >= 1:
+            # Keep only the maximum chroma per hue_deg to ensure strictly increasing x
+            idx = bin_data['chroma'].idxmax()
+            filtered_data = bin_data.loc[[idx]].reset_index(drop=True)
+            sorted_data = filtered_data.sort_values(by='hue_deg')
+            max_chroma_per_hue.append((sorted_data.iloc[0]['hue_deg'], sorted_data.iloc[0]['chroma'], sorted_data.iloc[0]['a'], sorted_data.iloc[0]['b'], sorted_data.iloc[0]['L'], sorted_data.iloc[0]['R'], sorted_data.iloc[0]['G'], sorted_data.iloc[0]['B']))
+        elif len(bin_data) == 0:
+            # No data in this bin, append NaNs
+            max_chroma_per_hue.append((hue_min + hue_resolution / 2, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan))
+
+    # Convert result to DataFrame
+    df_max_chroma = pd.DataFrame(max_chroma_per_hue, columns=['hue_deg', 'max_chroma', 'a', 'b', 'L', 'R', 'G', 'B'])
+
+    from scipy.signal import savgol_filter
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
+    import colour # type: ignore
+
+    # Sort by hue to preserve circular structure
+    df_sorted = df_max_chroma.sort_values(by='hue_deg').reset_index(drop=True)
+
+    def cielab_to_hex(L, a, b):
+        scale = 1
+        L_arr = np.asarray(L)*scale
+        a_arr = np.asarray(a)*scale
+        b_arr = np.asarray(b)*scale
+        # Build Lab array with shape (N, 3) for vectorized conversion or (3,) for scalar
+        if L_arr.ndim == 0:
+            Lab = np.array([float(L_arr), float(a_arr), float(b_arr)])
+        else:
+            Lab = np.column_stack((L_arr.astype(float), a_arr.astype(float), b_arr.astype(float)))
+
+        XYZ = colour.Lab_to_XYZ(Lab)
+        def rgb_to_hex(rgb):
+            rgb8 = (np.clip(rgb, 0, 1) * 255 + 0.5).astype(np.uint8)
+            return [f'#{r:02X}{g:02X}{b:02X}' for r, g, b in rgb8]
+        sRGB = colour.XYZ_to_sRGB(XYZ)
+        # Clip to [0, 1] range
+        sRGB = np.clip(sRGB, 0, 1)
+        hex_color = rgb_to_hex(sRGB)
+        return hex_color
+
+    # --- Robust handling for missing/insufficient data before smoothing ---
+    # Interpolate missing values (linear along hue). This avoids NaNs being passed
+    # to numpy.polyfit inside the savgol_filter implementation which triggers
+    # SVD failures when NaNs are present or when there are too few valid points.
+    for col in ['a', 'b', 'L']:
+        # Use linear interpolation; fill ends by carrying nearest valid value if needed
+        df_sorted[col] = df_sorted[col].interpolate(method='linear', limit_direction='both')
+
+    # If interpolation left NaNs (e.g. all values were NaN), skip smoothing
+    if df_sorted[['a', 'b', 'L']].isnull().any(axis=None):
+        print("Warning: Not enough valid Rosch-MacAdam data to perform smoothing — skipping Savitzky-Golay.")
+        df_sorted['a_smooth'] = df_sorted['a']
+        df_sorted['b_smooth'] = df_sorted['b']
+        df_sorted['L_smooth'] = df_sorted['L']
+    else:
+        # Define smoothing parameters
+        window_length = 13  # Must be odd and < number of points
+        polyorder = 4
+
+        # Ensure window_length is an odd integer and smaller than available points
+        n_points = len(df_sorted)
+        if window_length >= n_points:
+            # make window_length the largest odd < n_points
+            window_length = n_points - 1 if n_points % 2 == 0 else n_points
+            if window_length % 2 == 0:
+                window_length -= 1
+
+        # Ensure window_length > polyorder; if not, reduce polyorder
+        if window_length <= polyorder:
+            polyorder = max(1, window_length - 1)
+
+        # Apply smoothing inside try/except to catch linear algebra failures
+        try:
+            df_sorted['a_smooth'] = savgol_filter(df_sorted['a'].to_numpy(dtype=float), window_length, polyorder)
+            df_sorted['b_smooth'] = savgol_filter(df_sorted['b'].to_numpy(dtype=float), window_length, polyorder)
+            df_sorted['L_smooth'] = savgol_filter(df_sorted['L'].to_numpy(dtype=float), window_length, polyorder)
+        except Exception as e:
+            print(f"Warning: Savitzky-Golay smoothing failed: {e}. Using unsmoothed data instead.")
+            df_sorted['a_smooth'] = df_sorted['a']
+            df_sorted['b_smooth'] = df_sorted['b']
+            df_sorted['L_smooth'] = df_sorted['L']
+        # Convert smoothed CIELAB to XYZ and then to sRGB and then to Hex
+        df_sorted['hex_smooth'] = cielab_to_hex(df_sorted['L_smooth'], df_sorted['a_smooth'], df_sorted['b_smooth'])
+    return df_sorted

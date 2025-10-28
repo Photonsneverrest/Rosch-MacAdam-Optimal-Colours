@@ -14,13 +14,14 @@ importlib.reload(mesh)
 importlib.reload(analysis)
 importlib.reload(cache)
 from cache import save_colour_solid_to_csv, load_colour_solid_from_csv
-from analysis import max_chroma_at_hue, chroma_envelope_vs_L_for_hue, Lstar_to_Yrel
+from analysis import max_chroma_at_hue, chroma_envelope_vs_L_for_hue, Lstar_to_Yrel, max_chroma_per_hue
 from mesh import macadam_mesh_in_Lab_from_XYZ_hull, add_mesh3d, add_ebu_mesh
 from core import build_rosch_macadam_XYZ
 from plotting import plot_macadam_plotly
 import os
 import numpy as np
 import plotly.graph_objects as go
+import pandas as pd
 
 import tempfile
 import pathlib
@@ -46,6 +47,23 @@ def main():
 
     V_plot, F = macadam_mesh_in_Lab_from_XYZ_hull(XYZ_rel, Lab_ref, scale=1.0)
     fig = add_mesh3d(fig, V_plot, F, color='rgba(80,80,80,0.18)', name='Optimal Colours Mesh')
+
+    # Load data from rosch_macadam_colour_solid_1nm.csv
+    df_rosch = pd.read_csv(CACHE_FILE)
+    # Find the maximum chroma and their corresponding lightness for each hue angle in df_rosch
+    df_max_chroma = max_chroma_per_hue(df_rosch, hue_resolution=1.0)
+    # Save df_max_chroma to CSV
+    max_chroma_csv = SCRIPT_DIR + '/' + 'rosch_macadam_max_chroma_per_hue.csv'
+    df_max_chroma.to_csv(max_chroma_csv, index=False)
+    # Add max chroma points to the plot
+    fig.add_trace(go.Scatter3d(
+        x=df_max_chroma['a_smooth'],
+        y=df_max_chroma['b_smooth'],
+        z=df_max_chroma['L_smooth'],
+        mode='markers',
+        marker=dict(size=5,color=df_max_chroma['hex_smooth'], opacity=1, line=dict(color='black', width=1)),
+        name='Max Chroma per Hue'
+    ))
 
     target_hue = 244 # in degrees
     tol_deg = 0.75
@@ -79,7 +97,7 @@ def main():
     frame_dir.mkdir(exist_ok=True)
     
     frames = []
-    n_frames = 45 # 4° per frame for a full 360° rotation
+    n_frames = 60 # 6° per frame for a full 360° rotation
     for i in range(n_frames):
         angle = i * (360 / n_frames)
         fig.update_layout(scene_camera=dict(
@@ -89,9 +107,9 @@ def main():
         fig.write_image(str(frame_path), width=800, height=800)
         frames.append(imageio.v2.imread(str(frame_path)))
 
-    #Save as gif
+    # Save as gif
     gif_path = SCRIPT_DIR + '/' + 'GIF/rosch_macadam_colour_solid_rotation.gif'
-    fps = 13
+    fps = 12
     duration = int(n_frames / fps)
     imageio.mimsave(gif_path, frames, duration=duration, loop=0)
 
