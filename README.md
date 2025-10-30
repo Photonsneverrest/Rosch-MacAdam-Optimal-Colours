@@ -1,4 +1,4 @@
-# Project Title
+# Compute colour performance metrics from spectra
 
 Surface of colour solid is shown representing optimal colours. These are the colours an average human eye can perceive perceptually equally spaced.
 It is used as reference to quantify the performance of a pigment. Two ratios are taken for a given hue: chroma effciency and lightness efficiency,
