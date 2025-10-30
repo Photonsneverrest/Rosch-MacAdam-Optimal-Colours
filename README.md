@@ -13,10 +13,10 @@ $$
 \eta_{L*} = \frac{L*}{L*(hue)}
 $$
 
-L* is the CIELAB lightness value. Chroma is given through the euclidean norm in the a*-b* plane $\sqrt{a^2 + b^2}$ and can be understood as saturation.
-Values in the denominator are maximum chroma values at same hue while the hue is the polar angle in the a*-b* plane $\theta = \arctan\!\left(\frac{b*}{a*}\right)$.
+L* is the CIELAB lightness value. Chroma is given through the euclidean norm in the a*-b* plane $C = \sqrt{a^2 + b^2}$ and can be understood as saturation.
+Values in the denominator are maximum chroma values at same hue while the hue is the polar angle in the a*-b* plane $\theta = \arctan(\frac{b*}{a*})$.
 The maximum chroma values are shown in the gif below as bigger markers on the surface of the Rösch-MacAdam colour solid.
-The chroma efficiency has its maximum at 100% since the colour solid seems to be convex. While the lightness efficiency has its optimum at 100% while when above approaching the white point, hence desaturating.
+The chroma efficiency has its maximum at 100% since the colour solid seems to be convex. While the lightness efficiency has its optimum at 100% but can reach values above 100% however then above approaching the white point (desaturating).
 
 
 <p align="center">
